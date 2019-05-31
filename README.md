@@ -1,1 +1,3 @@
-hand_gesture_classifier
+hand gesture classifier
+
+
