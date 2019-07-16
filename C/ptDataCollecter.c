@@ -1,13 +1,14 @@
 #include "headerFiles.h"
 
-#define PORT 1333
+#define PORT 30330
 #define BUFFER_SIZE 1024
 #define BUFF_SIZE 400
 #define LISTEN_QUEUE_SIZE 8
 
 char folder_name[20];
 char file_name[20];
-char file_dir[40] = "/home/gunuk/ptData/";
+//char file_dir[40] = "Data/";
+char file_dir[40] = "Data/";
 
 void childHandler(int signal){
     
@@ -28,36 +29,35 @@ void FileCase(char index){
     
     switch (index){
 	case '1':
-	    d = opendir("/home/gunuk/ptData/1/");
+	    d = opendir("Data/1/");
 	    break;
 	case '2':
-	    d = opendir("/home/gunuk/ptData/2/");
+	    d = opendir("Data/2/");
 	    break;
 	case '3':
-	    d = opendir("/home/gunuk/ptData/3/");
+	    d = opendir("Data/3/");
 	    break;
 	case '4':
-	    d = opendir("/home/gunuk/ptData/4/");
+	    d = opendir("Data/4/");
 	    break;
 	case '5':
-	    d = opendir("/home/gunuk/ptData/5/");
+	    d = opendir("Data/5/");
 	    break;
 	case '6':
-	    d = opendir("/home/gunuk/ptData/6/");
+	    d = opendir("Data/6/");
 	    break;
 	case '7':
-	    d = opendir("/home/gunuk/ptData/7/");
+	    d = opendir("Data/7/");
 	    break;
 	case '8':
-	    d = opendir("/home/gunuk/ptData/8/");
+	    d = opendir("Data/8/");
 	    break;
 	case '9':
-	    d = opendir("/home/gunuk/ptData/9/");
+	    d = opendir("Data/9/");
 	    break;
 	case 'a':
-	    d = opendir("/home/gunuk/ptData/a/");
+	    d = opendir("Data/a/");
 	    break;
-
     }
     if(d){
         while((dir = readdir(d)) != NULL){
@@ -121,7 +121,8 @@ int main(){
         while((connectFD = accept(listenFD, (struct sockaddr*)&connectSocket, (socklen_t*)&connectSocketLength))>=0){
             getpeername(connectFD, (struct sockaddr*)&peerSocket, &connectSocketLength);
 
-            char peerName[sizeof(peerSocket.sin_addr)+1]={0};
+//            char peerName[sizeof(peerSocket.sin_addr)+1]={0};
+            char peerName[sizeof(peerSocket.sin_addr)+10]={0};
             sprintf(peerName, "%s", inet_ntoa(peerSocket.sin_addr));
 
             if(strcmp(peerName,"0.0.0.0") !=0){
@@ -178,16 +179,17 @@ int main(){
                         }
                         flag = 1;
                     }
-                    printf("\n%lu bytes read\n",receivedBytes);
+                    printf("\n%lu bytes read\n", receivedBytes);
                     readBuff[receivedBytes]='\0';
 
-                    printf("receive : %s\n",readBuff);
+                    printf("receive : %s\n", readBuff);
                     
-                    fp = fopen(file_dir,"a");
-                    fprintf(fp, "%s",readBuff);
+                    printf("%s\n", file_dir);
+                    
+                    fp = fopen(file_dir, "a");
+                    fprintf(fp, "%s", readBuff);
 
-                    if(fp == NULL)
-                    printf("file open error");
+                    if(fp == NULL) printf("file open error");
 
                     fclose(fp);
                 }
