@@ -1,3 +1,0 @@
-hand gesture classifier
-
-
