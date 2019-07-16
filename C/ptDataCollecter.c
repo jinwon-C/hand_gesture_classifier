@@ -1,6 +1,6 @@
 #include "headerFiles.h"
 
-#define PORT 15513
+#define PORT 1333
 #define BUFFER_SIZE 1024
 #define BUFF_SIZE 400
 #define LISTEN_QUEUE_SIZE 8
@@ -15,9 +15,9 @@ void childHandler(int signal){
     pid_t spid;
 
     while((spid = waitpid(-1, &status, WNOHANG))>0){
-	printf("PID : %d\n",spid);
-	printf("Exit Value : %d\n",WEXITSTATUS(status));
-	printf("Exit Stat : %d\n",WIFEXITED(status));
+        printf("PID : %d\n",spid);
+        printf("Exit Value : %d\n",WEXITSTATUS(status));
+        printf("Exit Stat : %d\n",WIFEXITED(status));
     }
 }
 void FileCase(char index){
@@ -60,19 +60,18 @@ void FileCase(char index){
 
     }
     if(d){
-	while((dir = readdir(d)) != NULL){
-	    num++;
+        while((dir = readdir(d)) != NULL){
+            num++;
 	}
 	closedir(d);
     }
-
     sprintf(folder_name,"%c/",index);
     strcat(file_dir,folder_name);
 
     sprintf(file_name,"%c_%d.csv",index,num-2);
     strcat(file_dir,file_name);
-    
 }
+
 int main(){
     signal(SIGCHLD, (void *)childHandler);
 
@@ -103,106 +102,101 @@ int main(){
     FILE *fp;
 
     if(bind(listenFD, (struct sockaddr *)&listenSocket, sizeof(listenSocket)) == -1){
-	printf("Can not bind.\n");
-	return -1;
+        printf("Can not bind.\n");
+        return -1;
     }
 
     if (listen(listenFD, LISTEN_QUEUE_SIZE) == -1){
-	printf("Listen fail.\n");
-	return -1;
+        printf("Listen fail.\n");
+        return -1;
     }
 
     printf("Waiting for clients...\n");
     
     while(1){
-	struct sockaddr_in connectSocket, peerSocket;
+        struct sockaddr_in connectSocket, peerSocket;
 
-	socklen_t connectSocketLength = sizeof(connectSocket);
+        socklen_t connectSocketLength = sizeof(connectSocket);
 
-	while((connectFD = accept(listenFD, (struct sockaddr*)&connectSocket, (socklen_t*)&connectSocketLength))>=0){
-	    getpeername(connectFD, (struct sockaddr*)&peerSocket, &connectSocketLength);
+        while((connectFD = accept(listenFD, (struct sockaddr*)&connectSocket, (socklen_t*)&connectSocketLength))>=0){
+            getpeername(connectFD, (struct sockaddr*)&peerSocket, &connectSocketLength);
 
-	    char peerName[sizeof(peerSocket.sin_addr)+1]={0};
-	    sprintf(peerName, "%s", inet_ntoa(peerSocket.sin_addr));
+            char peerName[sizeof(peerSocket.sin_addr)+1]={0};
+            sprintf(peerName, "%s", inet_ntoa(peerSocket.sin_addr));
 
-	    if(strcmp(peerName,"0.0.0.0") !=0){
-	    
-		printf("Client : %s\n", peerName);
-		printf("%02d%02d%02d connect\n",t->tm_hour,t->tm_min,t->tm_sec);
-	    }
-	    else if(connectFD<0){
-		printf("Server: accept failed\n");
-		exit(0);
-	    }
+            if(strcmp(peerName,"0.0.0.0") !=0){
+            
+                printf("Client : %s\n", peerName);
+                printf("%02d%02d%02d connect\n",t->tm_hour,t->tm_min,t->tm_sec);
+            }
+            else if(connectFD<0){
+                printf("Server: accept failed\n");
+                exit(0);
+            }
 
-	    pid = fork();
+            pid = fork();
 
-	    if(pid == 0){
+            if(pid == 0){
+                close(listenFD);
+                ssize_t receivedBytes;
+                
+                while((receivedBytes = read(connectFD, readBuff, BUFF_SIZE)) >0){
+                    
+                    Index = readBuff[0];
+                    if(flag == 0){
+                        switch (Index) {
+                            case '1':
+                            FileCase('1');
+                            break;
+                            case '2':
+                            FileCase('2');
+                            break;
+                            case '3':
+                            FileCase('3');
+                            break;
+                            case '4':
+                            FileCase('4');
+                            break;
+                            case '5':
+                            FileCase('5');
+                            break;
+                            case '6':
+                            FileCase('6');
+                            break;
+                            case '7':
+                            FileCase('7');
+                            break;
+                            case '8':
+                            FileCase('8');
+                            break;
+                            case '9':
+                            FileCase('9');
+                            break;
+                            case 'a':
+                            FileCase('a');
+                            break;
+                        }
+                        flag = 1;
+                    }
+                    printf("\n%lu bytes read\n",receivedBytes);
+                    readBuff[receivedBytes]='\0';
 
-		close(listenFD);
-		ssize_t receivedBytes;
-		
-		while((receivedBytes = read(connectFD, readBuff, BUFF_SIZE)) >0){
-		    
-		    Index = readBuff[0];
-		    if(flag == 0){
-			switch (Index) {
-			    case '1':
-				FileCase('1');
-				break;
-			    case '2':
-				FileCase('2');
-				break;
-			    case '3':
-				FileCase('3');
-				break;
-			    case '4':
-				FileCase('4');
-				break;
-			    case '5':
-				FileCase('5');
-				break;
-			    case '6':
-				FileCase('6');
-				break;
-			    case '7':
-				FileCase('7');
-				break;
-			    case '8':
-				FileCase('8');
-				break;
-			    case '9':
-				FileCase('9');
-				break;
-			    case 'a':
-				FileCase('a');
-				break;
-			}
-			flag = 1;
-		    }
+                    printf("receive : %s\n",readBuff);
+                    
+                    fp = fopen(file_dir,"a");
+                    fprintf(fp, "%s",readBuff);
 
-		    printf("\n%lu bytes read\n",receivedBytes);
-		    readBuff[receivedBytes]='\0';
+                    if(fp == NULL)
+                    printf("file open error");
 
-		    printf("receive : %s\n",readBuff);
-		    
-		    fp = fopen(file_dir,"a");
-		    fprintf(fp, "%s",readBuff);
-
-		    if(fp == NULL)
-			printf("file open error");
-
-		    fclose(fp);
-		}	
-		close(connectFD);
-		return 0;
-	    }
-	    else
-		close(connectFD);
-	}
+                    fclose(fp);
+                }
+                close(connectFD);
+                return 0;
+            }
+            else close(connectFD);
+        }
     }
-   
     close(listenFD);
-
     return 0;
 }

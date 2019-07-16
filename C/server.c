@@ -1,12 +1,11 @@
 #include "headerFiles.h"
 
-#define PORT 30330
+#define PORT 1333
 #define BUFFER_SIZE 30000
 #define BUFF_SIZE 1000
 #define LISTEN_QUEUE_SIZE 8
 
 void childHandler(int signal){
-    
     int status;
     pid_t spid;
 
@@ -16,10 +15,11 @@ void childHandler(int signal){
 	printf("Exit Stat : %d\n",WIFEXITED(status));
     }
 }
+
 void folder_create(){
     char folder_name[100];
 	//char folder_dir[100] = "/home/gunuk/mLData/";
-	char folder_dir[100] = "/home/gunuk/mLData/";
+	char folder_dir[100] = "/Data/";
 
     struct tm *t;
     time_t rawtime;
@@ -35,6 +35,7 @@ void folder_create(){
     else if(access(folder_dir,F_OK)==-1)
 	mkdir(folder_dir,0750);
 }
+
 int main(){
     signal(SIGCHLD, (void *)childHandler);
 
@@ -55,7 +56,8 @@ int main(){
     
     char folder_name[20];
     char file_name[20];
-    char file_dir[41] = "/home/gunuk/mLData/";
+    //char file_dir[41] = "/home/gunuk/mLData/";
+    char file_dir[41] = "/Data/";
 
     struct tm *t;
     time_t rawtime;
@@ -67,81 +69,78 @@ int main(){
     FILE *fp;
 
     if(bind(listenFD, (struct sockaddr *)&listenSocket, sizeof(listenSocket)) == -1){
-	printf("Can not bind.\n");
-	return -1;
+        printf("Can not bind.\n");
+        return -1;
     }
 
     if (listen(listenFD, LISTEN_QUEUE_SIZE) == -1){
-	printf("Listen fail.\n");
-	return -1;
+        printf("Listen fail.\n");
+        return -1;
     }
 
     printf("Waiting for clients...\n");
     
     while(1){
-	struct sockaddr_in connectSocket, peerSocket;
+        struct sockaddr_in connectSocket, peerSocket;
+        socklen_t connectSocketLength = sizeof(connectSocket);
 
-	socklen_t connectSocketLength = sizeof(connectSocket);
+        while((connectFD = accept(listenFD, (struct sockaddr*)&connectSocket, (socklen_t*)&connectSocketLength))>=0){
+            printf("test\n");
+            getpeername(connectFD, (struct sockaddr*)&peerSocket, &connectSocketLength);
+            printf("test2\n");
 
-	while((connectFD = accept(listenFD, (struct sockaddr*)&connectSocket, (socklen_t*)&connectSocketLength))>=0){
-	    getpeername(connectFD, (struct sockaddr*)&peerSocket, &connectSocketLength);
+            char peerName[sizeof(peerSocket.sin_addr)+1]={0};
+            printf("test\n");
+            //sprintf(peerName, "%s", inet_ntoa(peerSocket.sin_addr));
+            printf("test3\n");
 
-	    char peerName[sizeof(peerSocket.sin_addr)+1]={0};
-	    sprintf(peerName, "%s", inet_ntoa(peerSocket.sin_addr));
+            if(strcmp(peerName,"0.0.0.0") !=0){
+                folder_create();
+                printf("Client : %s\n", peerName);
+                printf("%02d%02d%02d connect\n",t->tm_hour,t->tm_min,t->tm_sec);
+            }
+            else if(connectFD<0){
+                printf("Server: accept failed\n");
+                exit(0);
+            }
 
-	    if(strcmp(peerName,"0.0.0.0") !=0){
-		folder_create();
-		printf("Client : %s\n", peerName);
-		printf("%02d%02d%02d connect\n",t->tm_hour,t->tm_min,t->tm_sec);
-	    }
-	    else if(connectFD<0){
-		printf("Server: accept failed\n");
-		exit(0);
-	    }
+            pid = fork();
 
-	    pid = fork();
+            if(pid == 0){
+                close(listenFD);
+                ssize_t receivedBytes;
+                
+                while((receivedBytes = read(connectFD, readBuff, BUFF_SIZE)) >0){
+                    if(flag == 0){
+                        sprintf(folder_name,"%04d-%02d-%02d/",t->tm_year+1900,t->tm_mon+1,t->tm_mday);
+                        sprintf(file_name,"%02d%02d%02d.csv",t->tm_hour,t->tm_min,t->tm_sec);
 
-	    if(pid == 0){
+                        strcat(file_dir,folder_name);
+                        strcat(file_dir,file_name);
 
-		close(listenFD);
-		ssize_t receivedBytes;
-		
-		while((receivedBytes = read(connectFD, readBuff, BUFF_SIZE)) >0){
-		    
-		    if(flag == 0){
-			sprintf(folder_name,"%04d-%02d-%02d/",t->tm_year+1900,t->tm_mon+1,t->tm_mday);
-			sprintf(file_name,"%02d%02d%02d.csv",t->tm_hour,t->tm_min,t->tm_sec);
+                        flag = 1;
+                    }
+                    printf("\n%lu bytes read\n",receivedBytes);
+                    readBuff[receivedBytes]='\0';
 
-			strcat(file_dir,folder_name);
-			strcat(file_dir,file_name);
+                    printf("receive : %s\n",readBuff);
 
-			flag = 1;
-		    }
+                    fp = fopen(file_dir,"a");
+                    fprintf(fp, "%s",readBuff);
 
-		    printf("\n%lu bytes read\n",receivedBytes);
-		    readBuff[receivedBytes]='\0';
+                    if(fp == NULL)
+                    printf("file open error");
 
-		    printf("receive : %s\n",readBuff);
-
-		    fp = fopen(file_dir,"a");
-		    fprintf(fp, "%s",readBuff);
-
-		    if(fp == NULL)
-			printf("file open error");
-
-		    fclose(fp);
-		}
-		printf("\n");
-		printf("%02d%02d%02d Disconnect\n",t->tm_hour,t->tm_min,t->tm_sec);	
-		close(connectFD);
-		return 0;
-	    }
-	    else
-		close(connectFD);
-	}
+                    fclose(fp);
+                }
+                printf("\n");
+                printf("%02d%02d%02d Disconnect\n",t->tm_hour,t->tm_min,t->tm_sec);
+                close(connectFD);
+                return 0;
+            }
+            else close(connectFD);
+        }
     }
-   
     close(listenFD);
-
     return 0;
 }
