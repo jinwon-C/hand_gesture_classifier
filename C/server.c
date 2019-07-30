@@ -1,6 +1,6 @@
 #include "headerFiles.h"
 
-#define PORT 1333
+#define PORT 30330
 #define BUFFER_SIZE 30000
 #define BUFF_SIZE 1000
 #define LISTEN_QUEUE_SIZE 8
@@ -19,7 +19,7 @@ void childHandler(int signal){
 void folder_create(){
     char folder_name[100];
 	//char folder_dir[100] = "/home/gunuk/mLData/";
-	char folder_dir[100] = "/Data/";
+	char folder_dir[100] = "Data/";
 
     struct tm *t;
     time_t rawtime;
@@ -57,7 +57,7 @@ int main(){
     char folder_name[20];
     char file_name[20];
     //char file_dir[41] = "/home/gunuk/mLData/";
-    char file_dir[41] = "/Data/";
+    char file_dir[41] = "Data/";
 
     struct tm *t;
     time_t rawtime;
@@ -87,12 +87,15 @@ int main(){
         while((connectFD = accept(listenFD, (struct sockaddr*)&connectSocket, (socklen_t*)&connectSocketLength))>=0){
             printf("test\n");
             getpeername(connectFD, (struct sockaddr*)&peerSocket, &connectSocketLength);
-            printf("test2\n");
 
-            char peerName[sizeof(peerSocket.sin_addr)+1]={0};
-            printf("test\n");
-            //sprintf(peerName, "%s", inet_ntoa(peerSocket.sin_addr));
-            printf("test3\n");
+            char peerName[sizeof(inet_ntoa(peerSocket.sin_addr))+6]={0};
+            //char peerName[80]={0};
+
+            printf("%s\n", inet_ntoa(peerSocket.sin_addr));
+            printf("%lu\n", sizeof(peerName));
+            printf("%lu\n", sizeof(inet_ntoa(peerSocket.sin_addr)));
+            
+            sprintf(peerName, "%s", inet_ntoa(peerSocket.sin_addr));
 
             if(strcmp(peerName,"0.0.0.0") !=0){
                 folder_create();
@@ -117,7 +120,9 @@ int main(){
 
                         strcat(file_dir,folder_name);
                         strcat(file_dir,file_name);
-
+                        
+                        printf("%s", file_dir);
+                        
                         flag = 1;
                     }
                     printf("\n%lu bytes read\n",receivedBytes);
@@ -128,8 +133,7 @@ int main(){
                     fp = fopen(file_dir,"a");
                     fprintf(fp, "%s",readBuff);
 
-                    if(fp == NULL)
-                    printf("file open error");
+                    if(fp == NULL) printf("file open error");
 
                     fclose(fp);
                 }
